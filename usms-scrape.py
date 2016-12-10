@@ -14,7 +14,12 @@ def get_roster():
 
     roster = {};
     # add each team member
+    count = 0;
     for line in team_csv.splitlines():
+        count += 1;
+        # skip first line
+        if count == 1: continue;
+
         columns = line.split(',')
         fullname = columns[0] + ' ' + columns[2];
         id = columns[5];
@@ -49,6 +54,10 @@ def get_best_results(usms_id):
                 time = e[0].text.strip();
             else:
                 time = best_row.xpath('(//td)[7]//a')[0].text.strip();
+        # ignore "&nbsp;*" asterisk
+        time = time.replace(u'\xa0*','')
+        # prefix with spaces to make all times ten chars long so they can be sorted
+        time = time.rjust(10);
         best_times[event] = time;
     return best_times;
 
@@ -57,12 +66,27 @@ def scrape_team ():
     roster = get_roster();
 
     # for each team member, get their best event results
+    team_results = {};
     for usms_id in roster:
-        print usms_id;
-        print get_best_results(usms_id);
-        print;
+        team_results[usms_id] = get_best_results(usms_id);
+
+    # aggregate results by event
+    event_best_results = {}; # maps from "event" -> [[time, usms_id], ...]
+    for usms_id, best_results in team_results.iteritems():
+        for event, time in best_results.iteritems():
+            if event not in event_best_results:
+                event_best_results[event] = [];
+            event_best_results[event].append({'time':time, 'usms_id':usms_id});
+    # sort each list of times
+    for event, results in event_best_results.iteritems():
+        event_best_results[event] = sorted(results, key=lambda result: result['time']);
 
     # print team rankings for each event
+    for event, results in event_best_results.iteritems():
+        print event;
+        for result in results:
+            print result['time'] + ' ' + roster[result['usms_id']];
+        print
 
 if __name__ == '__main__':
     scrape_team();
