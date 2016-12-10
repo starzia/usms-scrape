@@ -46,21 +46,21 @@ def get_best_results(usms_id):
     best_times = {};
     for best_row in table.xpath('//tr[@bgcolor="#EEEEEE"]'):
         # pick out the event name and time
-        event = best_row.xpath('//td/strong')[0].text;
+        event = best_row.xpath('.//td/strong')[0].text;
         # time can either be in a link or not, and may have an asterisk or not
-        time = best_row.xpath('(//td)[7]')[0].text.strip();
+        time = best_row.xpath('(.//td)[7]')[0].text.strip();
         if time == '':
-            e = best_row.xpath('(//td)[7]//span');
+            e = best_row.xpath('(.//td)[7]//span');
             if len(e) > 0 and e[0].text is not None:
                 time = e[0].text.strip();
             else:
-                time = best_row.xpath('(//td)[7]//a')[0].text.strip();
+                time = best_row.xpath('(.//td)[7]//a')[0].text.strip();
         # ignore "&nbsp;*" asterisk
         time = time.replace(u'\xa0*','')
         # prefix with spaces to make all times ten chars long so they can be sorted
         time = time.rjust(10);
         # HACK: suffix times with the age, for our information
-        age = best_row.xpath('(//td)[3]')[0].text.strip();
+        age = best_row.xpath('(.//td)[3]')[0].text.strip();
         time = time + ' (' + age + ')'
         best_times[event] = time;
     return best_times;
