@@ -41,10 +41,14 @@ def get_best_results(usms_id):
     for best_row in table.xpath('//tr[@bgcolor="#EEEEEE"]'):
         # pick out the event name and time
         event = best_row.xpath('//td/strong')[0].text;
-        # time can either be in a link or not
+        # time can either be in a link or not, and may have an asterisk or not
         time = best_row.xpath('(//td)[7]')[0].text.strip();
         if time == '':
-            time = best_row.xpath('(//td)[7]//a')[0].text.strip();
+            e = best_row.xpath('(//td)[7]//span');
+            if len(e) > 0 and e[0].text is not None:
+                time = e[0].text.strip();
+            else:
+                time = best_row.xpath('(//td)[7]//a')[0].text.strip();
         best_times[event] = time;
     return best_times;
 
