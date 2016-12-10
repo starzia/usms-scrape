@@ -21,6 +21,7 @@ def get_roster():
         if count == 1: continue;
 
         columns = line.split(',')
+        if columns[4] != 'EVM': continue; # just include our workout group
         fullname = columns[0] + ' ' + columns[2];
         id = columns[5];
         roster[id] = fullname;
@@ -58,6 +59,9 @@ def get_best_results(usms_id):
         time = time.replace(u'\xa0*','')
         # prefix with spaces to make all times ten chars long so they can be sorted
         time = time.rjust(10);
+        # HACK: suffix times with the age, for our information
+        age = best_row.xpath('(//td)[3]')[0].text.strip();
+        time = time + ' (' + age + ')'
         best_times[event] = time;
     return best_times;
 
