@@ -4,7 +4,7 @@ This script scrapes the best swim times for members of the Evanston Wild Catfish
 and prints out a ranking of best times for each event.  The script was written because this view
 of the data is not available on the usms.org website.
 
-These rankings would be expecially usefor for coaches needing to assemble relay teams.
+These rankings would be especially useful for coaches needing to assemble relay teams.
 '''
 from lxml import html
 import requests
