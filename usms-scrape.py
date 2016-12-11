@@ -1,5 +1,7 @@
 #!/usr/bin/python
 '''
+Just run this without any paramenters.
+
 This script scrapes the best swim times for members of the Evanston Wild Catfish Masters Swim team
 and prints out a ranking of best times for each event.  The script was written because this view
 of the data is not available on the usms.org website.
@@ -15,10 +17,18 @@ def get_tree (url):
     page = requests.get(url)
     return html.fromstring(page.content)
 
+def get_2year_roster():
+    '''return rosters for both 2016 and 2017'''
+    roster = get_roster('2016');
+    for id, name in get_roster('2017').iteritems():
+        if id not in roster:
+            roster[id] = name;
+    return roster;
+
 '''return a map of [USMS-id] -> [Fullname]'''
-def get_roster():
+def get_roster(year):
     # download csv team roster
-    team_url = 'http://www.usms.org/reg/members/jqs/lmscmembers.php?LMSCID=21&RegYear=2017&oper=csv&_search=false&nd=1481396514766&rows=500&page=1&sidx=BinaryLastName+asc%2C+FirstName+asc%2C+RegDate&sord=asc&totalrows=-1';
+    team_url = 'http://www.usms.org/reg/members/jqs/lmscmembers.php?LMSCID=21&RegYear='+year+'&oper=csv&_search=false&nd=1481396514766&rows=500&page=1&sidx=BinaryLastName+asc%2C+FirstName+asc%2C+RegDate&sord=asc&totalrows=-1';
     team_csv = requests.get(team_url).content;
 
     roster = {};
@@ -32,16 +42,15 @@ def get_roster():
         columns = line.split(',')
         if columns[4] != 'EVM': continue; # just include our workout group
         fullname = columns[0] + ' ' + columns[2];
-        id = columns[5];
+        id = columns[5].split('-')[1]; # the part of the id after the hyphen is the permanent id
         roster[id] = fullname;
     return roster;
 
 
 '''return a map of [event name] -> [time].
    Currently this gets your best SCY times from your current age group only.'''
-def get_best_results(usms_id, since_date):
+def get_best_results(swimmer_id, since_date):
     # download the HTMl for the individual's results
-    swimmer_id = usms_id.split('-')[1];
     page = get_tree('http://www.usms.org/comp/meets/indresults.php?SwimmerID=' + swimmer_id);
 
     # pick out the first table, which corresponds to most recent age group and SCY
@@ -96,7 +105,7 @@ def scrape_team ():
     since_date = (datetime.date.today() + relativedelta(years=-3)).strftime("%Y-%m-%d");
 
     # get the team index
-    roster = get_roster();
+    roster = get_2year_roster();
 
     # for each team member, get their best event results
     team_results = {};
