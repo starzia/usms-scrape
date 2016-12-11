@@ -1,6 +1,15 @@
 #!/usr/bin/python
+'''
+This script scrapes the best swim times for members of the Evanston Wild Catfish Masters Swim team
+and prints out a ranking of best times for each event.  The script was written because this view
+of the data is not available on the usms.org website.
+
+These rankings would be expecially usefor for coaches needing to assemble relay teams.
+'''
 from lxml import html
 import requests
+import datetime
+from dateutil.relativedelta import relativedelta
 
 def get_tree (url):
     page = requests.get(url)
@@ -30,7 +39,7 @@ def get_roster():
 
 '''return a map of [event name] -> [time].
    Currently this gets your best SCY times from your current age group only.'''
-def get_best_results(usms_id):
+def get_best_results(usms_id, since_date):
     # download the HTMl for the individual's results
     swimmer_id = usms_id.split('-')[1];
     page = get_tree('http://www.usms.org/comp/meets/indresults.php?SwimmerID=' + swimmer_id);
@@ -44,35 +53,55 @@ def get_best_results(usms_id):
 
     # pick out all the rows with bgcolor="#EEEEEE" which correspond to best times
     best_times = {};
-    for best_row in table.xpath('//tr[@bgcolor="#EEEEEE"]'):
-        # pick out the event name and time
-        event = best_row.xpath('.//td/strong')[0].text;
+    for row in table.xpath('.//tr[@valign="top"]'):
+        # ignore header row
+        if len(row.xpath('.//th')) is not 0: continue;
+        # parse the columns
+        event = row.xpath('(.//td)[5]')[0].text.strip();
+        if event == '':
+            event = row.xpath('.//td/strong')[0].text;
+        # date of swim
+        date = row.xpath('(.//td)[2]')[0].text;
+        date = date[1:11];
+        # ignore times more than 3 years old
+        if date < since_date:
+            continue;
+
         # time can either be in a link or not, and may have an asterisk or not
-        time = best_row.xpath('(.//td)[7]')[0].text.strip();
-        if time == '':
-            e = best_row.xpath('(.//td)[7]//span');
+        race_time = row.xpath('(.//td)[7]')[0].text.strip();
+        if race_time == '':
+            e = row.xpath('(.//td)[7]//span');
             if len(e) > 0 and e[0].text is not None:
-                time = e[0].text.strip();
+                race_time = e[0].text.strip();
             else:
-                time = best_row.xpath('(.//td)[7]//a')[0].text.strip();
+                race_time = row.xpath('(.//td)[7]//a')[0].text.strip();
         # ignore "&nbsp;*" asterisk
-        time = time.replace(u'\xa0*','')
+        race_time = race_time.replace(u'\xa0*','')
+        # ignore DQs
+        if race_time == 'DQ': continue;
         # prefix with spaces to make all times ten chars long so they can be sorted
-        time = time.rjust(10);
+        race_time = race_time.rjust(10);
         # HACK: suffix times with the age, for our information
-        age = best_row.xpath('(.//td)[3]')[0].text.strip();
-        time = time + ' (' + age + ')'
-        best_times[event] = time;
+        age = row.xpath('(.//td)[3]')[0].text.strip();
+        race_time = race_time + ' (' + age + ')'
+        # add the time, but only if it's faster than any other one we already recorded for him/her
+        if event in best_times:
+            other_time = best_times[event];
+            if other_time < race_time: continue;
+        best_times[event] = race_time;
     return best_times;
 
 def scrape_team ():
+    # define the earliest races to include
+    since_date = (datetime.date.today() + relativedelta(years=-3)).strftime("%Y-%m-%d");
+
     # get the team index
     roster = get_roster();
 
     # for each team member, get their best event results
     team_results = {};
     for usms_id in roster:
-        team_results[usms_id] = get_best_results(usms_id);
+        team_results[usms_id] = get_best_results(usms_id, since_date);
 
     # aggregate results by event
     event_best_results = {}; # maps from "event" -> [[time, usms_id], ...]
