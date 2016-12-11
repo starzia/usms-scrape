@@ -25,8 +25,10 @@ def get_2year_roster():
             roster[id] = name;
     return roster;
 
-'''return a map of [USMS-id] -> [Fullname]'''
+
 def get_roster(year):
+    '''return a map of [USMS-id] -> [Fullname]'''
+
     # download csv team roster
     team_url = 'http://www.usms.org/reg/members/jqs/lmscmembers.php?LMSCID=21&RegYear='+year+'&oper=csv&_search=false&nd=1481396514766&rows=500&page=1&sidx=BinaryLastName+asc%2C+FirstName+asc%2C+RegDate&sord=asc&totalrows=-1';
     team_csv = requests.get(team_url).content;
@@ -47,9 +49,10 @@ def get_roster(year):
     return roster;
 
 
-'''return a map of [event name] -> [time].
-   Currently this gets your best SCY times from your current age group only.'''
 def get_best_results(swimmer_id, since_date):
+    '''return a map of [event name] -> [time].
+       Currently this gets your best SCY times from your current age group only.'''
+
     # download the HTMl for the individual's results
     page = get_tree('http://www.usms.org/comp/meets/indresults.php?SwimmerID=' + swimmer_id);
 
@@ -60,7 +63,7 @@ def get_best_results(swimmer_id, since_date):
         return {};
     table = tables[0]
 
-    # pick out all the rows with bgcolor="#EEEEEE" which correspond to best times
+    # look through all swim result rows
     best_times = {};
     for row in table.xpath('.//tr[@valign="top"]'):
         # ignore header row
@@ -87,7 +90,7 @@ def get_best_results(swimmer_id, since_date):
         # ignore "&nbsp;*" asterisk
         race_time = race_time.replace(u'\xa0*','')
         # ignore DQs
-        if race_time == 'DQ': continue;
+        if race_time == 'DQ' or race_time == 'DNF': continue;
         # prefix with spaces to make all times ten chars long so they can be sorted
         race_time = race_time.rjust(10);
         # HACK: suffix times with the age, for our information
@@ -99,6 +102,7 @@ def get_best_results(swimmer_id, since_date):
             if other_time < race_time: continue;
         best_times[event] = race_time;
     return best_times;
+
 
 def scrape_team ():
     # define the earliest races to include
