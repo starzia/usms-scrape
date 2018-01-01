@@ -18,9 +18,13 @@ def get_tree (url):
     return html.fromstring(page.content)
 
 def get_2year_roster():
-    '''return rosters for both 2016 and 2017'''
-    roster = get_roster('2016');
-    for id, name in get_roster('2017').iteritems():
+    '''return rosters for both the current season and the prior one'''
+    now = datetime.datetime.now()
+    year = int(now.year)
+    if now.month > 10:
+        year += 1
+    roster = get_roster(year-1);
+    for id, name in get_roster(year-1).iteritems():
         if id not in roster:
             roster[id] = name;
     return roster;
@@ -30,7 +34,7 @@ def get_roster(year):
     '''return a map of [USMS-id] -> [Fullname]'''
 
     # download csv team roster
-    team_url = 'http://www.usms.org/reg/members/jqs/lmscmembers.php?LMSCID=21&RegYear='+year+'&oper=csv&_search=false&nd=1481396514766&rows=500&page=1&sidx=BinaryLastName+asc%2C+FirstName+asc%2C+RegDate&sord=asc&totalrows=-1';
+    team_url = 'http://www.usms.org/reg/members/jqs/lmscmembers.php?LMSCID=21&RegYear='+str(year)+'&oper=csv&_search=false&nd=1481396514766&rows=500&page=1&sidx=BinaryLastName+asc%2C+FirstName+asc%2C+RegDate&sord=asc&totalrows=-1';
     team_csv = requests.get(team_url).content;
 
     roster = {};
