@@ -132,11 +132,15 @@ def scrape_team ():
         event_best_results[event] = sorted(results, key=lambda result: result['time']);
 
     # print team rankings for each event
-    for event, results in event_best_results.iteritems():
-        print event;
-        for result in results:
-            print result['time'] + ' ' + roster[result['usms_id']];
-        print
+    for stroke in ['Free', 'Fly', 'Back', 'Breast', 'IM']:
+        for distance in [50, 100, 200, 400, 500, 800, 1000, 1650]:
+            event = "%d %s" % (distance, stroke)
+            if event in event_best_results:
+                results = event_best_results[event]
+                print event;
+                for result in results:
+                    print result['time'] + ' ' + roster[result['usms_id']];
+                print
 
 if __name__ == '__main__':
     scrape_team();
