@@ -24,7 +24,7 @@ def get_2year_roster():
     if now.month > 10:
         year += 1
     roster = get_roster(year-1);
-    for id, name in get_roster(year-1).iteritems():
+    for id, name in get_roster(year-1).items():
         if id not in roster:
             roster[id] = name;
     return roster;
@@ -32,20 +32,20 @@ def get_2year_roster():
 
 def get_roster(year):
     '''return a map of [USMS-id] -> [Fullname]'''
+    import csv, io
 
     # download csv team roster
     team_url = 'http://www.usms.org/reg/members/jqs/lmscmembers.php?LMSCID=21&RegYear='+str(year)+'&oper=csv&_search=false&nd=1481396514766&rows=500&page=1&sidx=BinaryLastName+asc%2C+FirstName+asc%2C+RegDate&sord=asc&totalrows=-1';
-    team_csv = requests.get(team_url).content;
+    team_csv = requests.get(team_url).text;
 
     roster = {};
     # add each team member
     count = 0;
-    for line in team_csv.splitlines():
+    for columns in csv.reader(io.StringIO(team_csv)):
         count += 1;
         # skip first line
         if count == 1: continue;
 
-        columns = line.split(',')
         if columns[4] != 'EVM': continue; # just include our workout group
         fullname = columns[0] + ' ' + columns[2];
         id = columns[5].split('-')[1]; # the part of the id after the hyphen is the permanent id
@@ -122,13 +122,13 @@ def scrape_team ():
 
     # aggregate results by event
     event_best_results = {}; # maps from "event" -> [[time, usms_id], ...]
-    for usms_id, best_results in team_results.iteritems():
-        for event, time in best_results.iteritems():
+    for usms_id, best_results in team_results.items():
+        for event, time in best_results.items():
             if event not in event_best_results:
                 event_best_results[event] = [];
             event_best_results[event].append({'time':time, 'usms_id':usms_id});
     # sort each list of times
-    for event, results in event_best_results.iteritems():
+    for event, results in event_best_results.items():
         event_best_results[event] = sorted(results, key=lambda result: result['time']);
 
     # print team rankings for each event
@@ -137,10 +137,10 @@ def scrape_team ():
             event = "%d %s" % (distance, stroke)
             if event in event_best_results:
                 results = event_best_results[event]
-                print event;
+                print(event);
                 for result in results:
-                    print result['time'] + ' ' + roster[result['usms_id']];
-                print
+                    print(result['time'] + ' ' + roster[result['usms_id']]);
+                print()
 
 if __name__ == '__main__':
     scrape_team();
